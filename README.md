@@ -204,7 +204,7 @@ The demonstration performs the following sequence:
 
 <!-- Add a paper link only if redistribution is permitted. -->
 
-[Take a look at paper:](https://drive.google.com/file/d/1E2n2r2hTkK8z5EnhQzTTAbOcefPSNtiD/view?usp=drive_link)
+[Take a look at the published paper](https://drive.google.com/file/d/1E2n2r2hTkK8z5EnhQzTTAbOcefPSNtiD/view?usp=drive_link)
 
 ---
 
@@ -222,8 +222,6 @@ My primary contributions to this project included:
 - Live FPGA demonstration development
 - Research paper preparation
 - Oral conference presentation
-
-> **Note:** This section should be modified to include only the work that I personally performed.
 
 ---
 
@@ -362,4 +360,4 @@ Research Interests:
 
 <!-- Optional links -->
 
-[CV](YOUR_CV_LINK) · [LinkedIn](YOUR_LINKEDIN_LINK) · [Email](mailto:YOUR_EMAIL)
+[CV](YOUR_CV_LINK) · [Email](kooseo1296@gmail.com)
