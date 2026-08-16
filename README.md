@@ -204,6 +204,8 @@ The demonstration performs the following sequence:
 
 <!-- Add a paper link only if redistribution is permitted. -->
 
+[Take a look at paper:](https://drive.google.com/file/d/1E2n2r2hTkK8z5EnhQzTTAbOcefPSNtiD/view?usp=drive_link)
+
 ---
 
 ## My Contributions
