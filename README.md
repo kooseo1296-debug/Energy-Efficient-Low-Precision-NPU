@@ -186,13 +186,7 @@ The demonstration performs the following sequence:
 
 <!-- Replace the path below with your actual video or GIF -->
 
-[▶ Watch the Live FPGA Demonstration]((https://drive.google.com/file/d/1lzkIqhfIcX4UrQ2W33rvNfDzw1MxMoIF/view?usp=drive_link))
-
-If a short GIF is available, it can be embedded directly:
-
-```markdown
-![Live FPGA Demo](docs/live_demo.gif)
-```
+[▶ Watch the Live FPGA Demonstration](https://drive.google.com/file/d/1lzkIqhfIcX4UrQ2W33rvNfDzw1MxMoIF/view?usp=drive_link)
 
 ---
 
@@ -236,19 +230,34 @@ My primary contributions to this project included:
 ```text
 .
 ├── rtl/
-│   ├── controller/
-│   ├── systolic_array/
-│   ├── buffers/
-│   ├── dynamic_scaling/
-│   └── zero_skipping/
+│   ├── baseline/
+│   ├── fixed_scaling engines/
+|   |    ├── Fixed-7/
+|   |    ├── Fixed-6/
+|   |    ├── Fixed-5/
+|   |    └── Fixed-4/
+|   |
+│   └── dynamic_scaling engines/
+│        ├── M1/
+|        |    ├── M1_no1/
+|        |    ├── M1_no2/
+|        |    ...
+|        |    └── M1_no9/
+│        ├── M2/
+|        |    ├── M2_no1/
+|        |    ├── M2_no2/
+|        |    ...
+|        |    └── M2_no9/
+│        ...
+|        └── M5/
+|             ├── M5_no1/
+|             ├── M5_no2/
+|             ...
+|             └── M5_no9/
+|
+├── testbench simulations/
 │
-├── simulation/
-│   ├── testbench/
-│   └── test_vectors/
-│
-├── software/
-│   ├── pytorch/
-│   └── pynq/
+├── pytorch software/
 │
 ├── results/
 │   ├── resource_utilization/
