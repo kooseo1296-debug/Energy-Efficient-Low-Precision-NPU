@@ -1,70 +1,354 @@
-# Systolic-Array-Spring-2026
-Low-Power AI Accelerator with Operation-Skipping Logic and Data-Converting System
+# Energy-Efficient Low-Precision NPU with Dynamic Scaling and Zero-Skipping
 
-## Project Overview
-This project aims to design and implement a highly power-efficient Systolic Array-based NPU in Verilog. The core objective is to minimize dynamic power consumption during the Matrix Multiplication operation by exploiting data sparsity.
+**FPGA NPU Architecture · Verilog RTL · PYNQ-Z2 · Low-Precision Computing · Design-Space Exploration**
 
-## Motivation & Background
-Modern AI/Deep Learning models exhibit high degrees of sparsity in their weights and activations. Traditional NPU architectures waste significant dynamic power by computing redundant operations (i.e., 0 * X = 0). This project addresses this redundancy by implementing a hardware-level zero-skipping mechanism to reduce unnecessary switching activities.
+*Presented at the 2026 ISE Summer Conference*  
+*Oral Presentation · Live FPGA Demonstration · Live Demonstration Award*
 
-## Tech Stack
-* Hardware Description Language: Verilog HDL
-* Synthesis & Power Analysis: AMD Vivado
+---
 
-## System Specifications
-| Parameter | Value | Description |
-| :--- | :--- | :--- |
-| **Clock Frequency** | 100 MHz | Target operating frequency for synthesis |
-| **Systolic Array Size** | 8-by-8 | N-by-N spatial architecture dimension |
-| **Data Width** | 8-bit | Bit width for input activation and weights; this also stands for Input/Weight SRAM's data width |
-| **Accumulator Width** | 32-bit | Bit-width for MAC accumulation results; this also stands for Psum SRAM's data width |
-| **BRAM depth** | 16384/1024 | Block RAM depth of Input/Weight SRAM(16384) and Psum SRAM(1024) |
-| **Target Device** | Xilinx Zynq-7000 | Target FPGA part used in Vivado |
+## Overview
 
-### Matrix Tiling Parameters
-To efficiently map large AI workloads onto the hardware, the controller dynamically manages the loop bounds using the following tiling dimensions:
+This project presents an energy-efficient low-precision Neural Processing Unit (NPU) for on-device AI inference.
 
-* **`IC` (Input Channel):** The depth of the input feature map or activation matrix.
-* **`OC` (Output Channel):** The number of filters or the depth of the output feature map.
-* **`S` (Spatial / Sequence Dimension):** The flattened spatial size (H x W) for vision workloads, or the sequence length for time-series/transformer workloads.
+The proposed architecture combines **Leading-One Detection (LOD)-based Dynamic Scaling** with **Switching-Aware Zero-Skipping** to improve the trade-off between inference fidelity, hardware resource usage, and dynamic power consumption.
 
-This parameterized approach ensures that the fixed-size `N x N` systolic array can execute matrix multiplications of arbitrary scales seamlessly.
+The NPU was implemented in **Verilog RTL** and prototyped on a **PYNQ-Z2 FPGA at 100 MHz**.
 
-## Control Logic & Instruction Execution Flow
+A total of **45 NPU configurations** were evaluated by varying mantissa precision and zero-skipping schemes. Based on fidelity, hardware cost, and power consumption, **M3_no8** was selected as the final architecture.
 
-The overall operation of the NPU is orchestrated by a central Finite State Machine (FSM) (`systolic_ctrl.v`). It operates as an instruction-driven controller, decoding 32-bit instructions to manage matrix tiling parameters, on-chip SRAM buffering, and the dual-phase execution of the Systolic Array.
+The resulting NPU was also integrated into a live-camera CIFAR-10 inference pipeline and demonstrated at the **2026 ISE Summer Conference**.
 
-### FSM States & Execution Phases
-The controller execution flow is divided into four main states:
-<img width="60%" alt="image" src="https://github.com/user-attachments/assets/e17b4ac5-d2db-4b31-a30f-45f54e1d8c39" />
+---
 
-1. **`IDLE` (State 00: Configuration & Writeback)**
-   * **Parameter Configuration:** Decodes instructions to set architectural matrix tiling parameters (`SC`, `IC`, `OC`) and Weight SRAM base address (`Offset`).
-   * **Writeback:** Safely drains the accumulated partial sums (`Psum`) from the on-chip `PsumSRAM` to the external interface.
-   
-2. **`LDINPUT` & `LDWEIGHT` (State 01 & 10: SRAM Buffering)**
-   * Fetches input activations and weight matrices from the instruction stream and buffers them into the dedicated on-chip **Input SRAM** and **Weight SRAM**. 
-   * This structure decouples external memory bandwidth bottlenecks from the high-speed internal systolic computation.
+## Key Contributions
 
-3. **`RUN` (State 11: Dual-Phase Compute)**
-   The core execution state is further divided into two sub-phases (`RunState` toggling) to establish a true Weight-Stationary dataflow:
-   * **Phase 0 (Weight Load Mode):** Pauses input streaming and dynamically loads the weights from the `WeightSRAM` into the internal PE registers row-by-row.
-   * **Phase 1 (Input Load & Compute):** * Streams input activations from the `InputSRAM` into the $N \times N$ array with appropriate valid-signal skewing.
+- Designed and implemented a low-precision NPU architecture in **Verilog RTL**
+- Introduced **LOD-based Dynamic Scaling** for adaptive low-bit computation
+- Implemented **Switching-Aware Zero-Skipping** to reduce unnecessary switching activity
+- Explored **45 hardware configurations** across precision and zero-skipping parameters
+- Evaluated the architecture in terms of:
+  - Inference fidelity
+  - LUT / FF / BRAM utilization
+  - Dynamic power consumption
+- Prototyped and validated the NPU on a **PYNQ-Z2 FPGA**
+- Integrated the accelerator into a **live-camera CIFAR-10 inference demonstration**
+- Presented the research through a **conference paper, oral presentation, and live demonstration**
 
+---
 
-## Hardware Architectures
-### 0. Conventional(Default)
-<p> <img width="70%" alt="image" src="https://github.com/user-attachments/assets/b9194636-8e2a-4dca-87e1-f2ad00fcc7bd" />
- <img width="25%" alt="image" src="https://github.com/user-attachments/assets/d4d7f7d3-4cda-476f-8777-058b8527476e" /> </p>
+## Key Results
 
-* **Boundary Masking:** The conventional Top-Level Architecture employs a `ZeroMask` module strictly for boundary handling. It forces out-of-bound input data to zero when the matrix dimension does not perfectly align with the array size (e.g., masking the 8th row if `IC = 7`).
-* **Redundant Computation:** Consequently, the conventional PE indiscriminately executes MAC operations regardless of the actual input values. Continuously computing $0 \times W$ forces the internal combinational logic and flip-flops to toggle, resulting in a massive waste of dynamic power.
+| Metric | Result |
+|---|---|
+| FPGA Platform | PYNQ-Z2 |
+| FPGA Clock | 100 MHz |
+| Design Space | 45 NPU configurations |
+| Baseline | INT8 NPU |
+| Proposed Precision | 3-bit mantissa Dynamic Scaling (M3) |
+| M3 Fidelity | **92.0%** |
+| Fixed-7 Fidelity | **74.0%** |
+| LUT Reduction vs. Fixed-7 | **23.7%** |
+| BRAM Reduction vs. Fixed-7 | **11.1%** |
+| Dynamic Power Reduction vs. Fixed-7 | **12.9%** |
+| M3_no8 Power Reduction vs. ungated M3 | **13.0%** |
 
-### 1. Zero-Skip
-<img width="70%" alt="image" src="https://github.com/user-attachments/assets/5e10781b-46e0-4129-a96a-254f78d0fcdb" /> <img width="50%" alt="image" src="https://github.com/user-attachments/assets/ed0af0dc-c1ee-4959-95a5-28d3509b69fe" />
+The proposed M3 Dynamic Scaling architecture achieved higher inference fidelity while using fewer hardware resources and consuming less dynamic power than the Fixed-7 baseline.
 
-To resolve the severe power inefficiency of the conventional design, we propose a Zero-Skipping architecture equipped with hardware-level sparsity detection and operand isolation.
+---
 
-* **Top-Level Pre-Detection:** A dedicated `Zero Detect [7:0]` module is integrated before the systolic array. It evaluates the incoming activations and generates a `ZeroFlag` for each row in advance. This centralized detection eliminates the need for redundant, power-hungry comparators inside every single PE.
-* **Operand Isolation (Data Gating):** Inside the PE, the `Do_Compute` signal controls the input registers (FFs). If a zero input is flagged (`ZeroFlag_In == 1`), invalid data is detected (`Valid_P_In == 0`), or the weight is zero (`W == 0`), the registers are disabled. This completely freezes the MAC datapath, preventing any unnecessary toggling.
-* **Datapath Bypassing:** When the computation is skipped, a `2-to-1 MUX` actively bypasses the MAC unit, forwarding the previous partial sum (`PSUM_In`) directly to the output (`PSUM_Out`).
+## Proposed Architecture
+
+### 1. LOD-Based Dynamic Scaling
+
+Conventional fixed-scaling architectures statically truncate low-precision operands, which can cause significant information loss as the bit width decreases.
+
+The proposed architecture detects the **leading-one position** of each operand and dynamically selects a significant bit window.
+
+This allows the NPU to preserve important numerical information while operating with a reduced mantissa width.
+
+> **Goal:** Maintain inference fidelity while reducing arithmetic precision and hardware cost.
+
+---
+
+### 2. Switching-Aware Zero-Skipping
+
+Neural-network workloads contain a significant number of zero-valued operands.
+
+The proposed NPU detects zero inputs and weights and suppresses unnecessary switching activity inside the processing elements.
+
+Two levels of zero detection are used:
+
+- External zero flags generated before entering the systolic array
+- Cell-level zero detection inside each processing element
+
+The resulting gating mechanism disables unnecessary arithmetic activity when the corresponding computation does not affect the output.
+
+> **Goal:** Reduce dynamic power consumption without changing the functional result.
+
+---
+
+## Design-Space Exploration
+
+Rather than evaluating a single architecture, this project explored **45 NPU configurations**.
+
+The design space consists of:
+
+- **5 mantissa configurations:** M1 – M5
+- **9 zero-skipping configurations:** no1 – no9
+
+The final architecture was selected using a three-stage filtering process:
+
+1. **Fidelity constraint**
+2. **Hardware-area constraint**
+3. **Dynamic-power constraint**
+
+This process identified **M3_no8** as the final architecture.
+
+---
+
+## FPGA Implementation
+
+The proposed architecture was implemented in **Verilog RTL** and synthesized for the **PYNQ-Z2 FPGA**.
+
+The NPU uses a weight-stationary systolic-array architecture for matrix multiplication.
+
+CNN convolution operations are transformed into GEMM operations using `im2col`, and the resulting matrix multiplications are executed by the FPGA NPU.
+
+### Experimental Workloads
+
+The architecture was evaluated using multiple neural-network workloads, including:
+
+- HeavyCNN
+- LightVGG
+- MLP
+- SmallVGG for the live demonstration
+
+---
+
+## Live FPGA Demonstration
+
+The proposed NPU was demonstrated as part of an end-to-end CIFAR-10 image-classification system.
+
+### Demonstration Pipeline
+
+```text
+USB Camera
+    |
+    v
+Image Capture
+    |
+    v
+32x32 RGB Crop / Resize
+    |
+    v
+Normalization
+    |
+    v
+im2col
+    |
+    v
++---------------------------+
+|       PYNQ-Z2 FPGA        |
+|                           |
+|   Low-Precision NPU       |
+|   Systolic Array / GEMM   |
+|   Dynamic Scaling         |
+|   Zero-Skipping           |
++---------------------------+
+    |
+    v
+CNN Classification
+    |
+    v
+Predicted Class + Logits
+
+```
+The demonstration verified that the proposed architecture operates on an actual FPGA as part of a complete CNN inference pipeline rather than only in software simulation.
+
+---
+
+## Demo
+
+A live demonstration was conducted using a **USB camera and PYNQ-Z2 FPGA** to verify the proposed NPU architecture on real hardware.
+
+The demonstration performs the following sequence:
+
+1. Capture an image from the USB camera
+2. Crop and resize the image to 32×32 RGB
+3. Normalize the input image
+4. Convert convolution operations into GEMM using `im2col`
+5. Execute matrix multiplication on the FPGA NPU
+6. Complete the remaining CNN operations
+7. Display the predicted CIFAR-10 class and output logits
+
+### Live Demo Video
+
+<!-- Replace the path below with your actual video or GIF -->
+
+[▶ Watch the Live FPGA Demonstration]((https://drive.google.com/file/d/1lzkIqhfIcX4UrQ2W33rvNfDzw1MxMoIF/view?usp=drive_link))
+
+If a short GIF is available, it can be embedded directly:
+
+```markdown
+![Live FPGA Demo](docs/live_demo.gif)
+```
+
+---
+
+## Publication
+
+**Bonseo Koo**, Youngjin Lee, Taewon Jung, and Sungju Ryu,  
+*"Maximizing NPU Fidelity and Efficiency with LOD-Based Dynamic Scaling and Switching-Aware Zero-Skipping,"*  
+**2026 ISE Summer Conference**
+
+### Conference Activities
+
+- Undergraduate Oral Presentation
+- Live FPGA Demonstration
+- **Live Demonstration Award**
+
+<!-- Add a paper link only if redistribution is permitted. -->
+
+---
+
+## My Contributions
+
+My primary contributions to this project included:
+
+- Verilog RTL design and implementation of NPU modules
+- Development of the low-precision NPU architecture
+- Implementation and evaluation of LOD-based Dynamic Scaling
+- Implementation and analysis of Switching-Aware Zero-Skipping
+- FPGA synthesis and hardware evaluation
+- Design-space exploration across multiple NPU configurations
+- Neural-network model development and evaluation
+- Live FPGA demonstration development
+- Research paper preparation
+- Oral conference presentation
+
+> **Note:** This section should be modified to include only the work that I personally performed.
+
+---
+
+## Repository Structure
+
+```text
+.
+├── rtl/
+│   ├── controller/
+│   ├── systolic_array/
+│   ├── buffers/
+│   ├── dynamic_scaling/
+│   └── zero_skipping/
+│
+├── simulation/
+│   ├── testbench/
+│   └── test_vectors/
+│
+├── software/
+│   ├── pytorch/
+│   └── pynq/
+│
+├── results/
+│   ├── resource_utilization/
+│   ├── power/
+│   └── fidelity/
+│
+├── docs/
+│   ├── architecture/
+│   └── live_demo/
+│
+└── README.md
+```
+
+---
+
+## Tools & Technologies
+
+### Hardware Design
+- Verilog HDL
+- AMD/Xilinx Vivado
+- RTL Simulation
+- FPGA Synthesis and Implementation
+
+### Hardware Platform
+- PYNQ-Z2 FPGA
+- USB Camera
+
+### Software
+- Python
+- PyTorch
+- Jupyter Notebook
+
+### Architecture & Optimization
+- Neural Processing Unit (NPU)
+- Systolic Array
+- Low-Precision Computing
+- LOD-Based Dynamic Scaling
+- Switching-Aware Zero-Skipping
+- CNN Quantization
+- Design-Space Exploration
+
+---
+
+## Research Outcome
+
+This project progressed through the following research and engineering workflow:
+
+**Architecture Design**  
+↓  
+**RTL Implementation**  
+↓  
+**FPGA Prototyping**  
+↓  
+**Design-Space Exploration**  
+↓  
+**Fidelity / Area / Power Evaluation**  
+↓  
+**Conference Paper**  
+↓  
+**Oral Presentation**  
+↓  
+**Live FPGA Demonstration**  
+↓  
+**Live Demonstration Award**
+
+The project provided experience spanning **NPU architecture design, RTL implementation, FPGA prototyping, quantitative hardware evaluation, and academic presentation**.
+
+It also motivated subsequent work toward **real-time neural-network inference and hardware/software co-design on FPGA-based SoC platforms**.
+
+---
+
+## Future Work
+
+The next stage of this project focuses on extending the current image-based inference system toward **real-time video inference**.
+
+Planned improvements include:
+
+- Migrating PS-side control from **Jupyter/Python to Vitis**
+- Improving PS–PL communication using **AXI-based interfaces**
+- Introducing **DMA-based high-throughput data transfer**
+- Reducing PS–PL communication overhead
+- Integrating the existing NPU with a real-time camera pipeline
+- Targeting sustained inference throughput of **30 FPS or higher**
+
+This extension aims to evolve the current FPGA NPU prototype into a more complete **real-time hardware/software co-designed inference system**.
+
+---
+
+## Author
+
+**Bonseo Koo**
+
+Research Interests:
+- AI Accelerators
+- Neural Processing Units
+- Digital VLSI
+- FPGA Architecture
+- Hardware/Software Co-Design
+- Energy-Efficient Computing
+
+<!-- Optional links -->
+
+[CV](YOUR_CV_LINK) · [LinkedIn](YOUR_LINKEDIN_LINK) · [Email](mailto:YOUR_EMAIL)
