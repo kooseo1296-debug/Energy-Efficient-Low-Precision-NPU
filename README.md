@@ -230,6 +230,7 @@ My primary contributions to this project included:
 ```text
 .
 ├── rtl/
+|   ├── testbench/
 │   ├── baseline/
 │   ├── fixed_scaling engines/
 |   |    ├── Fixed-7/
@@ -254,8 +255,6 @@ My primary contributions to this project included:
 |             ├── M5_no2/
 |             ...
 |             └── M5_no9/
-|
-├── testbench simulations/
 │
 ├── pytorch software/
 │
