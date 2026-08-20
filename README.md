@@ -259,9 +259,8 @@ My primary contributions to this project included:
 ├── pytorch software/
 │
 ├── results/
-│   ├── resource_utilization/
-│   ├── power/
-│   └── fidelity/
+│   ├── Overall data/
+│   └── power/
 │
 ├── docs/
 │   ├── architecture/
