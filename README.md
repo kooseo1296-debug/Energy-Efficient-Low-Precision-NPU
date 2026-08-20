@@ -326,7 +326,57 @@ The project provided experience spanning **NPU architecture design, RTL implemen
 It also motivated subsequent work toward **real-time neural-network inference and hardware/software co-design on FPGA-based SoC platforms**.
 
 ---
+## Testbench Strategy
 
+The zero-skipping behavior of the NPU is primarily characterized by five activity metrics:
+
+1. **Input switching rate**  
+   Fraction of input transitions corresponding to `NZ → ZR` or `ZR → NZ`
+
+2. **Input zero (ZR) rate**
+
+3. **Input non-zero (NZ) rate**
+
+4. **Weight zero (ZR) rate**
+
+5. **Weight non-zero (NZ) rate**
+
+Rather than creating a separate testbench for every sparsity-map configuration, the verification environment was designed around these five metrics.
+
+The input stimulus was divided into three representative activity patterns:
+
+- `NZ`: all input values are non-zero
+- `SW`: alternating zero/non-zero input values, maximizing ZR↔NZ switching
+- `ZR`: all input values are zero
+
+The weight stimulus was divided into two patterns:
+
+- `NZ`: all weights are non-zero
+- `ZR`: all weights are zero
+
+This results in six testbench scenarios:
+
+| Testbench | Input SW Rate | Input ZR Rate | Input NZ Rate | Weight ZR Rate | Weight NZ Rate |
+|---|---:|---:|---:|---:|---:|
+| `tb_nznz` | 0% | 0% | 100% | 0% | 100% |
+| `tb_nzzr` | 0% | 0% | 100% | 100% | 0% |
+| `tb_swnz` | 100% | 50% | 50% | 0% | 100% |
+| `tb_swzr` | 100% | 50% | 50% | 100% | 0% |
+| `tb_zrnz` | 0% | 100% | 0% | 0% | 100% |
+| `tb_zrzr` | 0% | 100% | 0% | 100% | 0% |
+
+For example, `tb_swnz` uses an alternating zero/non-zero input sequence with non-zero weights.
+Its five activity metrics are therefore:
+
+`[100%, 50%, 50%, 0%, 100%]`
+
+for:
+
+`[Input SW, Input ZR, Input NZ, Weight ZR, Weight NZ]`.
+
+These six scenarios were used to exercise the complete set of **64 sparsity-map configurations** without maintaining 64 nearly identical testbench files.
+
+The testbench structure therefore emphasizes the activity characteristics that directly affect the zero-skipping logic rather than treating each sparsity map as an independent stimulus pattern.
 ## Future Work
 
 The next stage of this project focuses on extending the current image-based inference system toward **real-time video inference**.
