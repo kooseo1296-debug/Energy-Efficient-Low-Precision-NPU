@@ -359,4 +359,4 @@ Research Interests:
 
 <!-- Optional links -->
 
-[CV](YOUR_CV_LINK) · [Email](kooseo1296@gmail.com)
+[CV](https://github.com/kooseo1296-debug/Bonseo-Koo/blob/main/Bonseo_Koo_CV_Aug17_2026.pdf) · [Email](kooseo1296@gmail.com)
