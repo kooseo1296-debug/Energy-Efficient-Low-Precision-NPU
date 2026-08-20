@@ -88,6 +88,150 @@ The resulting gating mechanism disables unnecessary arithmetic activity when the
 
 ---
 
+## Architecture
+
+### 1. Baseline NPU Architecture
+
+The baseline NPU uses an **8×8 weight-stationary systolic array** for matrix multiplication.
+
+Input activations and weights are transferred by the controller and stored in separate BRAMs before being supplied to the systolic array. The resulting partial sums and outputs are stored in the Product BRAM.
+
+In the baseline architecture, the controller transfers the original operands directly to the Input BRAM and Weight BRAM.
+
+```text
+Controller
+   ├──────────────> Input BRAM
+   └──────────────> Weight BRAM
+                          |
+                          v
+                8×8 Weight-Stationary
+                   Systolic Array
+                          |
+                          v
+                     Product BRAM
+```
+
+---
+
+### 2. Scaling Architecture
+
+The low-precision architecture extends the baseline NPU by inserting **scaling converters** between the controller and the input/weight BRAMs.
+
+```text
+Controller
+   |
+   ├──> Input Converter  ──> Input BRAM
+   |
+   └──> Weight Converter ──> Weight BRAM
+                                  |
+                                  v
+                        8×8 Weight-Stationary
+                           Systolic Array
+                                  |
+                                  v
+                             Product BRAM
+```
+
+The converters reduce the effective operand precision **before the operands are stored in BRAM and supplied to the systolic array**.
+
+This allows the systolic array to operate on low-precision operands while preserving the overall dataflow of the baseline architecture.
+
+The same system-level scaling architecture is used for both **Fixed Scaling** and **LOD-Based Dynamic Scaling**.
+
+The difference lies in how the converter selects the reduced-precision representation of each operand.
+
+---
+
+### 3. Scaling Methods
+
+#### Fixed Scaling
+
+Fixed Scaling selects a predetermined set of bits from every operand.
+
+The selected bit positions remain unchanged regardless of the magnitude of the operand.
+
+As the retained precision decreases, this static selection can discard significant information when the important bits lie outside the fixed window.
+
+#### LOD-Based Dynamic Scaling
+
+Dynamic Scaling instead determines the scaling position separately for each operand.
+
+A **Leading-One Detector (LOD)** identifies the most significant non-zero position, and the converter selects a reduced-precision bit window relative to that position.
+
+```text
+Input Operand
+     |
+     v
+Leading-One Detection
+     |
+     v
+Determine Scaling Position
+     |
+     v
+Select Reduced-Precision Bits
+     |
+     v
+Store in Input / Weight BRAM
+```
+
+This allows operands with different magnitudes to retain their most significant information while using a reduced multiplier precision.
+
+---
+
+## Processing Element and Zero-Skipping
+
+### 1. Processing Element Architecture
+
+The systolic array uses a **weight-stationary dataflow**, where weights remain
+inside the processing elements while input activations propagate through the array.
+
+<p align="center">
+  <img width="200" height="340" alt="image" src="https://github.com/user-attachments/assets/c7b87965-f424-449d-b3d9-674ee9e4552f" /><img width="350" height="350" alt="image" src="https://github.com/user-attachments/assets/9a7ae987-2f2f-4ca9-bf78-5308131b15f8" />
+
+</p>
+
+<p align="center">
+  <em> (a) Baseline and (c) proposed Dynamic Scaling + zero-skipping logic-implemented Processing Element (PE) architectures.</em>
+</p>
+
+Each PE performs the low-precision multiply-accumulate operation required by the
+systolic array.
+
+The Dynamic Scaling logic reduces the effective operand precision before
+multiplication, while the zero-skipping mechanism suppresses unnecessary
+switching activity when the multiplication result is known to be zero.
+
+Specifically, in the image, *Do_Compute = Valid & ~(ZeroFlag_Input  | ZeroFlag_Weight)* .
+When Do_Compute = 0, the gating logic deactivates the Barrel Shift & Sign, suppressing unnecessary switching to maximize energy efficiency.
+
+---
+
+### 2. Switching-Aware Zero-Skipping
+
+Neural-network workloads contain many zero-valued activations and weights.
+
+Executing a multiplication when either operand is zero does not contribute to the
+result, but unnecessary signal transitions can still consume dynamic power.
+
+The proposed architecture therefore introduces zero detection at two levels:
+
+- **External zero flags** generated before operands enter the systolic array
+- **Cell-level zero detection** inside each processing element
+
+When a multiplication is unnecessary, the corresponding internal activity is
+suppressed without changing the functional output.
+
+The zero-skipping design space was evaluated together with Dynamic Scaling,
+resulting in:
+
+- **5 mantissa configurations:** `M1` – `M5`
+- **9 zero-skipping configurations:** `no1` – `no9`
+- **45 total NPU configurations**
+
+The final architecture, **M3_no8**, was selected based on fidelity, hardware cost,
+and dynamic-power constraints.
+
+---
 ## Design-Space Exploration
 
 Rather than evaluating a single architecture, this project explored **45 NPU configurations**.
@@ -106,7 +250,6 @@ The final architecture was selected using a three-stage filtering process:
 This process identified **M3_no8** as the final architecture.
 
 ---
-
 ## FPGA Implementation
 
 The proposed architecture was implemented in **Verilog RTL** and synthesized for the **PYNQ-Z2 FPGA**.
