@@ -191,7 +191,7 @@ inside the processing elements while input activations propagate through the arr
 </p>
 
 <p align="center">
-  <em> (a) Baseline and (c) proposed Dynamic Scaling + zero-skipping logic-implemented Processing Element (PE) architectures.</em>
+  <em> Processing Element (PE) architectures: (a) Baseline and (c) proposed Dynamic Scaling + zero-skipping logic-implemented </em>
 </p>
 
 Each PE performs the low-precision multiply-accumulate operation required by the
