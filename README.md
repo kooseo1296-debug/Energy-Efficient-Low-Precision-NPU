@@ -191,7 +191,8 @@ inside the processing elements while input activations propagate through the arr
 </p>
 
 <p align="center">
-  <em> Processing Element (PE) architectures: (a) Baseline and (c) proposed Dynamic Scaling + zero-skipping logic-implemented </em>
+  <em> Processing Element (PE) architectures: (a) Baseline and (c) proposed Dynamic Scaling + zero-skipping logic-implemented. Specifically in (c), Do_Compute = Valid & ~(ZeroFlag_Input  | ZeroFlag_Weight) .
+When Do_Compute = 0, the gating logic deactivates the Barrel Shift & Sign, suppressing unnecessary switching to maximize energy efficiency.</em>
 </p>
 
 Each PE performs the low-precision multiply-accumulate operation required by the
@@ -200,9 +201,6 @@ systolic array.
 The Dynamic Scaling logic reduces the effective operand precision before
 multiplication, while the zero-skipping mechanism suppresses unnecessary
 switching activity when the multiplication result is known to be zero.
-
-Specifically, in the image, *Do_Compute = Valid & ~(ZeroFlag_Input  | ZeroFlag_Weight)* .
-When Do_Compute = 0, the gating logic deactivates the Barrel Shift & Sign, suppressing unnecessary switching to maximize energy efficiency.
 
 ---
 
